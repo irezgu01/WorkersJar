@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="/home/hamed/git/WorkersJar/jackson/jackson-annotations-2.7.0.jar"/>
-	<classpathentry kind="lib" path="/home/hamed/git/WorkersJar/jackson/jackson-core-2.7.4.jar"/>
-	<classpathentry kind="lib" path="/home/hamed/git/WorkersJar/jackson/jackson-databind-2.7.4.jar"/>
+	<classpathentry kind="lib" path="/home/cho/projet java/mini-vertx/vertx/lib/jackson-annotations-2.7.0.jar"/>
+	<classpathentry kind="lib" path="/home/cho/projet java/mini-vertx/vertx/lib/jackson-core-2.7.4.jar"/>
+	<classpathentry kind="lib" path="/home/cho/projet java/mini-vertx/vertx/lib/jackson-databind-2.7.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
