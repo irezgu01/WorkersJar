@@ -66,6 +66,10 @@ public class ClientResponse {
 		this.clientId = clientId;
 	}
 	public String toString() {
-		return "jobId "+jobId + " task "+task+ " Worker url "+workerURL+ " worker class "+workerClassName+" client  id "+clientId;
+		StringBuilder str = new StringBuilder();
+		str.append(jobId).append(System.getProperty("line.separator"));
+		str.append(task).append(System.getProperty("line.separator"));
+		str.append(workerURL).append(System.getProperty("line.separator"));
+		return str.toString();
 	}
 }
