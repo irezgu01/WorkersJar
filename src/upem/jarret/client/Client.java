@@ -31,6 +31,7 @@ public class Client {
 	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	private LinkedList<Worker> workers = new LinkedList<>();
 
+	
 	public Client(String address, int port, String cliendID) {
 		server = new InetSocketAddress(address, port);
 		this.clientID = cliendID;
