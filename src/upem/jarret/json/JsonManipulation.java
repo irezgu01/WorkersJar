@@ -49,15 +49,15 @@ public class JsonManipulation {
 	 * @return
 	 * @throws Exception
 	 */
-	public static List<Task> parseFile(String file) throws Exception {
+	public static List<Job> parseFile(String file) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
-		List<Task> tasks = new LinkedList<Task>();
+		List<Job> tasks = new LinkedList<Job>();
 
 		try {
 			JsonParser jsonParser = new JsonFactory().createParser(new File(file));
-			MappingIterator<Task> job = mapper.readValues(jsonParser, Task.class);
+			MappingIterator<Job> job = mapper.readValues(jsonParser, Job.class);
 			while (job.hasNext()) {
-				Task node = job.next();
+				Job node = job.next();
 				tasks.add(node);
 			}
 		} catch (
@@ -71,12 +71,12 @@ public class JsonManipulation {
 		}
 		return tasks;
 	}
-	public static String taskToJson(Task job) throws JsonProcessingException {
+	public static String taskToJson(Job job) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(job);
 	}
 	public static void main(String[] args) throws Exception {
-		List<Task> tasks = JsonManipulation.parseFile("/home/cho/git/WorkersJar/src/tasks.json");
+		List<Job> tasks = JsonManipulation.parseFile("/home/cho/git/WorkersJar/src/tasks.json");
 		tasks.stream().forEach(s -> {
 			try {
 				System.out.println(taskToJson(s));

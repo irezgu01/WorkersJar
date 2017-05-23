@@ -2,7 +2,7 @@ package upem.jarret.json;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class Task {
+public class Job {
 
 	private int jobId;
 	private int JobTaskNumber; 
@@ -12,11 +12,11 @@ public class Task {
 	private String workerURL;
 	private String workerClassName;
 	
-	public Task() {
+	public Job() {
 		
 	}
 
-	public Task(int jobId,int task,String description,int priority, String workerVersion, String workerURL, String workerClassName) {
+	public Job(int jobId,int task,String description,int priority, String workerVersion, String workerURL, String workerClassName) {
 		super();
 		this.jobId = jobId;
 		this.JobTaskNumber = task;
