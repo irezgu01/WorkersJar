@@ -9,12 +9,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import upem.jarret.worker.Job;
 
 public class Server {
 	   private static class Context {
@@ -96,7 +92,6 @@ public class Server {
 	    private final Set<SelectionKey> selectedKeys;
 	//    private final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(1) ;
 	    private boolean stopAccept = false;
-	    private Job job = null;
 	    ObjectMapper mapper = new ObjectMapper();
 
 	    public Server(int port) throws IOException {
@@ -104,18 +99,6 @@ public class Server {
 	        serverSocketChannel.bind(new InetSocketAddress(port));
 	        selector = Selector.open();
 	        selectedKeys = selector.selectedKeys();
-	    }
-	    
-	    private void chargeJob(){
-
-	    	try {
-				job = mapper.readValue("/home/hamed/git/WorkersJar/JarRetJobs.json", Job.class);
-			} catch (IOException e) {
-				
-				e.printStackTrace();
-			}
-
-	    	System.out.println("Test : "+job.getJobId());
 	    }
 
 	    public void launch() throws IOException {
@@ -200,7 +183,6 @@ public class Server {
 		
 		public static void main(String[] args) throws IOException {
 			Server server = new Server(7777);
-			server.chargeJob();
 			
 		}
 
