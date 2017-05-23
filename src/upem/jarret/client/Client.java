@@ -21,60 +21,55 @@ import upem.jarret.worker.WorkerFactory;
 
 public class Client {
 	private final InetSocketAddress server;
-	private final SocketChannel sc;
+	private SocketChannel sc;
 	private final String clientID;
 	private HTTPReader httpReader;
 	private HTTPHeader header;
 	private String content;
-	private final ByteBuffer buffer;
+	private ByteBuffer buffer;
 	private static final int BUFFER_SIZE = 4096;
 	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	private LinkedList<Worker> workers = new LinkedList<>();
 
-	public Client(String address, String cliendID, int port) throws IOException {
-
+	public Client(String address, int port, String cliendID) {
 		server = new InetSocketAddress(address, port);
 		this.clientID = cliendID;
-		sc = SocketChannel.open();
-		System.out.println("trying to connect ...");
-		sc.connect(server);
-		System.out.println("connected");
 		buffer = ByteBuffer.allocate(BUFFER_SIZE);
-		httpReader = new HTTPReader(sc, buffer);
 	}
 
 	/**
 	 * create the body of the get request and send it to the server
-	 * 
 	 * @throws IOException
 	 */
 	public void sendGetRequest() throws IOException {
-		//a changer en string builder
-		String request = "GET Task HTTP/1.1\r\nHost: " + server.getHostName() + "\r\n\r\n";
-		sc.write(UTF8_CHARSET.encode(request));
+		sc = SocketChannel.open();
+		sc.connect(server);
+		httpReader = new HTTPReader(sc, buffer);
+		StringBuilder request = new StringBuilder();
+		request.append("GET Task HTTP/1.1\r\nHost: ").append(server.getHostName()).append("\r\n\r\n");
+		sc.write(UTF8_CHARSET.encode(request.toString()));
 	}
 
 	/**
 	 * create the body of the response (post request) and send it to the server
-	 * 
 	 * @param length
 	 *            the length of the body of the request
 	 * @param response
-	 *            the answer of the client
+	 *            the answer of the client (jsonNode)
 	 * @throws IOException
 	 */
 	public void sendPostResponse(int length, ObjectNode response) throws IOException {
 		long jobId = response.get("JobId").asLong();
 		int task = response.get("Task").asInt();
-		//a changer en stringBuilder
-		String HeaderResponse = "POST Answer HTTP/1.1\r\nHost: " + server.getHostName()
-				+ " Content-Type: application/json\r\nContent-Length: " + length + "\r\n\r\n" ;
-		String contentResponse = response.textValue();
+		StringBuilder finalResponse = new StringBuilder();
+		finalResponse.append("POST Answer HTTP/1.1\r\nHost: ").append(server.getHostName())
+				.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n")
+				.append(response.toString());
+		System.out.println("Writing answer to server");
 		ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
-		buffer.put(UTF8_CHARSET.encode(HeaderResponse));
 		buffer.putLong(jobId);
 		buffer.putInt(task);
-		buffer.put(UTF8_CHARSET.encode(contentResponse));
+		buffer.put(UTF8_CHARSET.encode(finalResponse.toString()));
 		buffer.flip();
 		sc.write(buffer);
 		sc.close();
@@ -82,13 +77,12 @@ public class Client {
 	}
 
 	/**
-	 * convert the string received from the server to a ObjectNode
-	 * 
+	 * convert the string received from the server to an ObjectNode
 	 * @param string
 	 *            the body of the task received from the server
 	 * @return ObjectNode the response of the server
-	 * @throws IOException 
-	 * @throws JsonProcessingException 
+	 * @throws IOException
+	 * @throws JsonProcessingException
 	 */
 	private ObjectNode tojson(String stringResponse) throws JsonProcessingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
@@ -99,7 +93,6 @@ public class Client {
 
 	/**
 	 * read the body of the response of the server
-	 * 
 	 * @param header
 	 *            the head of the response received from the server
 	 * @return String the task received from the server
@@ -120,7 +113,6 @@ public class Client {
 
 	/**
 	 * get the response from the server. Separate the header from the body
-	 * 
 	 * @return Optional<String> the task received from the server. Empty if the
 	 *         server sends a bad response
 	 * @throws IOException
@@ -139,18 +131,20 @@ public class Client {
 		return Optional.empty();
 
 	}
+
 	/**
-	 * The client sleeps for x seconds 
-	 * @param serverTask 
+	 * The client sleeps for x seconds
+	 * @param serverTask
 	 * @throws InterruptedException
 	 */
 	private void sleep(ObjectNode serverTask) throws InterruptedException {
-		long timeToSleep = serverTask.get("ComeBackInSeconds").asLong()*10;
+		long timeToSleep = serverTask.get("ComeBackInSeconds").asLong() * 10;
 		System.out.println("sleeping ...");
 		Thread.sleep(timeToSleep);
 	}
+
 	/**
-	 * si le worker existe déja elle le renvoie sinon elle crée un nouveau 
+	 * si le worker existe déja elle le renvoie sinon elle crée un nouveau
 	 * @param serverTask
 	 * @return
 	 * @throws MalformedURLException
@@ -158,21 +152,25 @@ public class Client {
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	private Worker getWorker(ObjectNode serverTask) throws MalformedURLException, ClassNotFoundException, IllegalAccessException, InstantiationException {
+	private Worker getWorker(ObjectNode serverTask)
+			throws MalformedURLException, ClassNotFoundException, IllegalAccessException, InstantiationException {
 		long jobId = serverTask.get("JobId").asLong();
 		String workerVersion = serverTask.get("WorkerVersion").asText();
-		
-		Worker worker = workers.stream().filter(myworker -> myworker.getJobId() == jobId && myworker.getVersion().equals(workerVersion)).findAny().orElse(null);
+
+		Worker worker = workers.stream()
+				.filter(myworker -> myworker.getJobId() == jobId && myworker.getVersion().equals(workerVersion))
+				.findAny().orElse(null);
 		if (worker != null) {
 			return worker;
 		} else {
-				String workerUrl = serverTask.get("WorkerURL").asText();
-				String workerClass = serverTask.get("WorkerClassName").asText();
-				worker = WorkerFactory.getWorker(workerUrl,workerClass);
-				workers.add(worker);
+			String workerUrl = serverTask.get("WorkerURL").asText();
+			String workerClass = serverTask.get("WorkerClassName").asText();
+			worker = WorkerFactory.getWorker(workerUrl, workerClass);
+			workers.add(worker);
 		}
 		return worker;
 	}
+
 	/**
 	 * vérifier si le résultat du compute est un json ou pas
 	 * @param computation
@@ -187,6 +185,7 @@ public class Client {
 			return false;
 		}
 	}
+
 	/**
 	 * creer une réponse d'erreur
 	 * @param error
@@ -196,10 +195,11 @@ public class Client {
 	 */
 	public ObjectNode createErrorResponse(String error) throws JsonProcessingException, IOException {
 		ObjectNode computationError = tojson(content);
-		computationError.put("ClientId",clientID);
+		computationError.put("ClientId", clientID);
 		computationError.put("Error", error);
 		return computationError;
 	}
+
 	/**
 	 * creer la bonne réponse à renvoyer au serveur
 	 * @param computation
@@ -209,21 +209,24 @@ public class Client {
 	 */
 	public ObjectNode createGoodResponse(ObjectNode computation) throws JsonProcessingException, IOException {
 		ObjectNode response = tojson(content);
-		response.put("ClientId",clientID);
+		response.put("ClientId", clientID);
 		response.set("Answer", computation);
 		return response;
 	}
+
 	/**
-	 * récupérer le résultat du compute du worker
+	 * execute le compute du worker
+	 * 
 	 * @param serverTask
-	 * @return
+	 * @return le résultat du compute ObjectNode
 	 * @throws JsonProcessingException
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 * @throws IllegalAccessException
 	 * @throws InstantiationException
 	 */
-	public ObjectNode compute(ObjectNode serverTask) throws JsonProcessingException, IOException, ClassNotFoundException, IllegalAccessException, InstantiationException{
+	public ObjectNode compute(ObjectNode serverTask) throws JsonProcessingException, IOException,
+			ClassNotFoundException, IllegalAccessException, InstantiationException {
 		System.out.println("Retrieving worker");
 		Worker worker = getWorker(serverTask);
 		int task = serverTask.get("Task").asInt();
@@ -237,17 +240,19 @@ public class Client {
 		}
 		return tojson(computation);
 	}
+
 	/**
-	 * creer une réponse error too long
+	 * Vérifie que le résultat du compute n'est pas trop long
 	 * @param computation
 	 * @return
 	 * @throws HTTPException
 	 */
 	public boolean isTooLong(ObjectNode computation) throws HTTPException {
-		return UTF8_CHARSET.encode(computation.asText()).position()+ header.getContentLength() < 4096;
+		return UTF8_CHARSET.encode(computation.toString()).remaining() + header.getContentLength() > 4096;
 	}
+
 	/**
-	 * creer une reponse d'erreur is nested
+	 * vérifie que le résultat du compute ne contient pas d'object
 	 * @param objectNode
 	 * @return
 	 */
@@ -261,35 +266,54 @@ public class Client {
 		}
 		return false;
 	}
-	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException, IllegalAccessException, InstantiationException {
-		Client client = new Client("ns3001004.ip-5-196-73.eu", "1", 8080);
-		System.out.println("create get request");
-		client.sendGetRequest();
-		System.out.println("getting the response ...");
-		Optional<String> content = client.getResponse();
-		if (content.isPresent()) {
-			ObjectNode serverTask = client.tojson(content.get().toString());
-			if (serverTask.get("ComeBackInSeconds") != null) {
-				client.sleep(serverTask);
-			}
-			else{
-				System.out.println(serverTask);
-				ObjectNode computation = client.compute(serverTask);
-				if(client.isTooLong(computation)) {
-					ObjectNode response = client.createErrorResponse("Too Long");
-					client.sendPostResponse(response.toString().getBytes().length, response);
+
+	/**
+	 * retourne une chaine au format json
+	 * @param string
+	 * @return
+	 * @throws JsonProcessingException
+	 */
+	public static String jsonString(ObjectNode string) throws JsonProcessingException {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(string);
+	}
+
+	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException,
+			IllegalAccessException, InstantiationException {
+		if (args.length != 3) {
+			usage();
+			return;
+		}
+		Client client = new Client(args[0], Integer.valueOf(args[1]), args[2]);
+		while (!Thread.interrupted()) {
+			client.sendGetRequest();
+			Optional<String> content = client.getResponse();
+			if (content.isPresent()) {
+				ObjectNode serverTask = client.tojson(content.get().toString());
+				if (serverTask.get("ComeBackInSeconds") != null) {
+					client.sleep(serverTask);
+				} else {
+					System.out.println(Client.jsonString(serverTask));
+					ObjectNode computation = client.compute(serverTask);
+					if (client.isTooLong(computation)) {
+						ObjectNode response = client.createErrorResponse("Too Long");
+						client.sendPostResponse(response.toString().getBytes().length, response);
+					} else if (client.isNested(computation)) {
+						ObjectNode response = client.createErrorResponse("Answer is nested");
+						client.sendPostResponse(response.toString().getBytes().length, response);
+					} else {
+						ObjectNode response = client.createGoodResponse(computation);
+						client.sendPostResponse(computation.toString().getBytes().length, response);
+					}
+
 				}
-				else if(client.isNested(computation)) {
-					ObjectNode response = client.createErrorResponse("Answer is nested");
-					client.sendPostResponse(response.toString().getBytes().length, response);
-				}
-				else {
-					ObjectNode response = client.createGoodResponse(computation);
-					client.sendPostResponse(computation.toString().getBytes().length, response);
-				}
-				
+			} else {
+				System.out.println("Bad response");
 			}
 		}
 	}
 
+	public static void usage() {
+		System.out.println("Usage : Client serverAddress port clientID");
+	}
 }
