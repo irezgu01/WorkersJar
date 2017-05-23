@@ -1,6 +1,7 @@
 package upem.jarret.client;
 
 import java.io.IOException;
+
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.nio.ByteBuffer;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import upem.jarret.json.JsonManipulation;
 import upem.jarret.worker.Worker;
 import upem.jarret.worker.WorkerFactory;
 
@@ -78,21 +80,6 @@ public class Client {
 	}
 
 	/**
-	 * convert the string received from the server to an ObjectNode
-	 * @param string
-	 *            the body of the task received from the server
-	 * @return ObjectNode the response of the server
-	 * @throws IOException
-	 * @throws JsonProcessingException
-	 */
-	private ObjectNode tojson(String stringResponse) throws JsonProcessingException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		JsonNode node = mapper.readTree(stringResponse);
-		ObjectNode objectNode = (ObjectNode) node;
-		return objectNode;
-	}
-
-	/**
 	 * read the body of the response of the server
 	 * @param header
 	 *            the head of the response received from the server
@@ -139,7 +126,7 @@ public class Client {
 	 * @throws InterruptedException
 	 */
 	private void sleep(ObjectNode serverTask) throws InterruptedException {
-		long timeToSleep = serverTask.get("ComeBackInSeconds").asLong() * 10;
+		long timeToSleep = serverTask.get("ComeBackInSeconds").asLong() * 1_000;
 		System.out.println("sleeping ...");
 		Thread.sleep(timeToSleep);
 	}
@@ -195,7 +182,7 @@ public class Client {
 	 * @throws IOException
 	 */
 	public ObjectNode createErrorResponse(String error) throws JsonProcessingException, IOException {
-		ObjectNode computationError = tojson(content);
+		ObjectNode computationError = JsonManipulation.tojson(content);
 		computationError.put("ClientId", clientID);
 		computationError.put("Error", error);
 		return computationError;
@@ -209,7 +196,7 @@ public class Client {
 	 * @throws IOException
 	 */
 	public ObjectNode createGoodResponse(ObjectNode computation) throws JsonProcessingException, IOException {
-		ObjectNode response = tojson(content);
+		ObjectNode response = JsonManipulation.tojson(content);
 		response.put("ClientId", clientID);
 		response.set("Answer", computation);
 		return response;
@@ -239,7 +226,7 @@ public class Client {
 		if (!isNotValidJson(computation)) {
 			return createErrorResponse("Answer is not valid JSON");
 		}
-		return tojson(computation);
+		return JsonManipulation.tojson(computation);
 	}
 
 	/**
@@ -268,17 +255,10 @@ public class Client {
 		return false;
 	}
 
-	/**
-	 * retourne une chaine au format json
-	 * @param string
-	 * @return
-	 * @throws JsonProcessingException
-	 */
-	public static String jsonString(ObjectNode string) throws JsonProcessingException {
-		ObjectMapper mapper = new ObjectMapper();
-		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(string);
+	public static void usage() {
+		System.out.println("Usage : Client serverAddress port clientID");
 	}
-
+	
 	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException,
 			IllegalAccessException, InstantiationException {
 		if (args.length != 3) {
@@ -290,11 +270,11 @@ public class Client {
 			client.sendGetRequest();
 			Optional<String> content = client.getResponse();
 			if (content.isPresent()) {
-				ObjectNode serverTask = client.tojson(content.get().toString());
+				ObjectNode serverTask = JsonManipulation.tojson(content.get().toString());
 				if (serverTask.get("ComeBackInSeconds") != null) {
 					client.sleep(serverTask);
 				} else {
-					System.out.println(Client.jsonString(serverTask));
+					System.out.println(JsonManipulation.jsonString(serverTask));
 					ObjectNode computation = client.compute(serverTask);
 					if (client.isTooLong(computation)) {
 						ObjectNode response = client.createErrorResponse("Too Long");
@@ -314,7 +294,5 @@ public class Client {
 		}
 	}
 
-	public static void usage() {
-		System.out.println("Usage : Client serverAddress port clientID");
-	}
+
 }
