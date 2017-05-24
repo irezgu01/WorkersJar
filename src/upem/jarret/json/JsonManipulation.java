@@ -76,7 +76,7 @@ public class JsonManipulation {
 		return mapper.writeValueAsString(job);
 	}
 	public static void main(String[] args) throws Exception {
-		List<Job> tasks = JsonManipulation.parseFile("/home/cho/git/WorkersJar/src/tasks.json");
+		List<Job> tasks = JsonManipulation.parseFile("./src/tasks.json");
 		tasks.stream().forEach(s -> {
 			try {
 				System.out.println(taskToJson(s));
