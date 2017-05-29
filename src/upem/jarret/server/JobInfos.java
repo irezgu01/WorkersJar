@@ -8,7 +8,16 @@ public class JobInfos {
 	private final int nbTaskAssigned;
 	private final TaskManager tasks;
 	private final File fileContainsResponses;
+	private boolean doneAllTasks = false;
 	
+	public boolean verifyDoneAllTasks() {
+		return doneAllTasks;
+	}
+
+	public void setStatusOfDoneAllTasks() {
+		this.doneAllTasks = true;
+	}
+
 	public File getFileContainsResponses() {
 		return fileContainsResponses;
 	}

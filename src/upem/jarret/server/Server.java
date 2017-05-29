@@ -1,6 +1,7 @@
 package upem.jarret.server;
 
 import java.io.IOException;
+
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
@@ -9,11 +10,16 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import upem.jarret.json.Job;
 
 public class Server {
 	private static class Context {
@@ -82,20 +88,76 @@ public class Server {
 	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	private final BlockingQueue<String> queue = new LinkedBlockingQueue<>(4);
 	private boolean stopAccept = false;
-	ObjectMapper mapper = new ObjectMapper();
+	private final ObjectMapper mapper = new ObjectMapper();
 
-	public Server(int port) throws IOException {
+	private final Map<Job, JobInfos> jobs;
+	private final ArrayList<Job> jobsTasks  = new ArrayList<>();
+
+	private final int arraySize;
+	private int currentIndex = 0;
+
+	private int currentIndexArrayJobsTasks  = 0;
+	private boolean noTaskNow = false;
+
+	public Server(int port) throws Exception {
 		serverSocketChannel = ServerSocketChannel.open();
 		serverSocketChannel.bind(new InetSocketAddress(port));
 		selector = Selector.open();
 		selectedKeys = selector.selectedKeys();
+		jobs = JobManager.init();
+		initJobsTasks();
+		arraySize = jobs.keySet().size();
+	}
+
+	private void initJobsTasks(){
+		jobs.keySet().forEach(job -> jobsTasks.add(job));
+	}
+
+	private boolean verifyAvailableTask(){
+		for(JobInfos info : jobs.values()){
+			if(!info.verifyDoneAllTasks()){
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public Optional<String> getTask(){
+
+		Optional<String> result = Optional.empty();
+		currentIndexArrayJobsTasks %= arraySize; 
+
+		Job job = jobsTasks.get(currentIndexArrayJobsTasks);
+		if(jobs.get(job).verifyDoneAllTasks()){
+			currentIndexArrayJobsTasks++;
+			currentIndex = 0; 
+			return getTask();
+		}
+		if(jobs.get(job).getTasks().hasNext()){
+			result = jobs.get(job).getTasks().nextTask(); //On renvoie la prochaine tâche pas encore acquitée
+			currentIndex++;
+
+			if(!jobs.get(job).getTasks().hasNext()){
+				jobs.get(job).setStatusOfDoneAllTasks();
+
+			}
+			
+		}else{
+			jobs.get(job).setStatusOfDoneAllTasks();	  //Si pas de suivant alors toutes les tâches ont été traitées
+		}
+		if(currentIndex == job.getJobPriority() ){
+			//On passe aux tâches des jobs suivants
+			currentIndexArrayJobsTasks++;
+			currentIndex = 0; 
+		}
+		return result;
 	}
 
 	private ByteBuffer createTaskAnswer(String task) {
 		StringBuilder body = new StringBuilder();
 		ByteBuffer bb = UTF8_CHARSET.encode(task);
 		body.append("HTTP/1.1 200 OK\r\nContent-type: application/json; charset=utf-8\r\nContent-length: ")
-				.append(bb.remaining()).append("\r\n\r\n");
+		.append(bb.remaining()).append("\r\n\r\n");
 		ByteBuffer buffer = ByteBuffer.allocate(BUF_SIZE);
 		buffer.put(UTF8_CHARSET.encode(body.toString()));
 		buffer.put(bb);
@@ -110,7 +172,7 @@ public class Server {
 		int length = UTF8_CHARSET.encode(body.toString()).remaining();
 
 		header.append("HTTP/1.1 200 OK\r\nContent-type: application/json; charset=utf-8\r\nContent-length: ")
-				.append(length).append("\r\n\r\n").append(body.toString());
+		.append(length).append("\r\n\r\n").append(body.toString());
 		ByteBuffer buffer = ByteBuffer.allocate(BUF_SIZE);
 		buffer.put(UTF8_CHARSET.encode(header.toString()));
 		buffer.put(UTF8_CHARSET.encode(body.toString()));
@@ -129,8 +191,18 @@ public class Server {
 		serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
 		Set<SelectionKey> selectedKeys = selector.selectedKeys();
 		while (!Thread.interrupted()) {
-
-			selectedKeys.clear();
+		    if(verifyAvailableTask()){
+		    	System.out.println(getTask().toString());
+		    }
+		    try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//selector.select();          
+            //processSelectedKeys();
+			//selectedKeys.clear();
 		}
 	}
 
@@ -213,12 +285,13 @@ public class Server {
 		System.out.println("Server <listeningPort>");
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		if (args.length != 1) {
 			usage();
 			return;
 		}
 		Server server = new Server(7777);
+		server.launch();
 
 	}
 
