@@ -64,15 +64,15 @@ public class Client {
 	public void sendPostResponse(int length, ObjectNode response) throws IOException {
 		long jobId = response.get("JobId").asLong();
 		int task = response.get("Task").asInt();
-		StringBuilder finalResponse = new StringBuilder();
-		finalResponse.append("POST Answer HTTP/1.1\r\nHost: ").append(server.getHostName())
-				.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n")
-				.append(response.toString());
+		StringBuilder httpPostHeader = new StringBuilder();
+		httpPostHeader.append("POST Answer HTTP/1.1\r\nHost: ").append(server.getHostName())
+				.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n");
 		System.out.println("Writing answer to server");
 		ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+		buffer.put(UTF8_CHARSET.encode(httpPostHeader.toString()));
 		buffer.putLong(jobId);
 		buffer.putInt(task);
-		buffer.put(UTF8_CHARSET.encode(finalResponse.toString()));
+		buffer.put(UTF8_CHARSET.encode(response.toString()));
 		buffer.flip();
 		sc.write(buffer);
 		sc.close();
@@ -236,7 +236,7 @@ public class Client {
 	 * @throws HTTPException
 	 */
 	public boolean isTooLong(ObjectNode computation) throws HTTPException {
-		return UTF8_CHARSET.encode(computation.toString()).remaining() + header.getContentLength() > 4096;
+		return Integer.BYTES+Long.BYTES+UTF8_CHARSET.encode(computation.toString()).remaining() + header.getContentLength() > 4096;
 	}
 
 	/**
