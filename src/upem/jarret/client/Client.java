@@ -33,7 +33,7 @@ public class Client {
 	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 	private LinkedList<Worker> workers = new LinkedList<>();
 
-	
+
 	public Client(String address, int port, String cliendID) {
 		server = new InetSocketAddress(address, port);
 		this.clientID = cliendID;
@@ -44,13 +44,18 @@ public class Client {
 	 * create the body of the get request and send it to the server
 	 * @throws IOException
 	 */
-	public void sendGetRequest() throws IOException {
+	public void sendGetRequest() throws IOException  {
 		sc = SocketChannel.open();
 		sc.connect(server);
 		httpReader = new HTTPReader(sc, buffer);
 		StringBuilder request = new StringBuilder();
 		request.append("GET Task HTTP/1.1\r\nHost: ").append(server.getHostName()).append("\r\n\r\n");
-		sc.write(UTF8_CHARSET.encode(request.toString()));
+		try {
+			sc.write(UTF8_CHARSET.encode(request.toString()));
+		} catch (IOException e) {
+			sendGetRequest(); //On retente de se reconnecter et de recuperer une tâche
+		}
+
 	}
 
 	/**
@@ -61,12 +66,12 @@ public class Client {
 	 *            the answer of the client (jsonNode)
 	 * @throws IOException
 	 */
-	public void sendPostResponse(int length, ObjectNode response) throws IOException {
+	public void sendPostResponse(int length, ObjectNode response) throws IOException  {
 		long jobId = response.get("JobId").asLong();
 		int task = response.get("Task").asInt();
 		StringBuilder httpPostHeader = new StringBuilder();
 		httpPostHeader.append("POST Answer HTTP/1.1\r\nHost: ").append(server.getHostName())
-				.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n");
+		.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n");
 		System.out.println("Writing answer to server");
 		ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
 		buffer.put(UTF8_CHARSET.encode(httpPostHeader.toString()));
@@ -74,8 +79,24 @@ public class Client {
 		buffer.putInt(task);
 		buffer.put(UTF8_CHARSET.encode(response.toString()));
 		buffer.flip();
-		sc.write(buffer);
-		sc.close();
+		try {
+			sc.write(buffer);
+		} catch (IOException e) {
+			
+			
+			//On retente de se reconnecter et de renvoyer la réponse
+
+			try {
+				sc.connect(server);
+				sc.write(buffer);
+			} catch (IOException e1) {
+				sendGetRequest();			//En cas d'échec on réitère le processus en demandant à nouveau une tâche 
+			}
+			
+		}
+
+
+
 
 	}
 
@@ -117,6 +138,15 @@ public class Client {
 
 		}
 		return Optional.empty();
+
+	}
+
+	public String getResponseCodeServer() throws IOException {
+		header = httpReader.readHeader();
+		StringBuilder result = new StringBuilder("Responding of server:\n");
+		result.append(header.getResponse());
+		sc.close();
+		return result.toString();
 
 	}
 
@@ -214,7 +244,7 @@ public class Client {
 	 * @throws InstantiationException
 	 */
 	public ObjectNode compute(ObjectNode serverTask) throws JsonProcessingException, IOException,
-			ClassNotFoundException, IllegalAccessException, InstantiationException {
+	ClassNotFoundException, IllegalAccessException, InstantiationException {
 		System.out.println("Retrieving worker");
 		Worker worker = getWorker(serverTask);
 		int task = serverTask.get("Task").asInt();
@@ -258,9 +288,9 @@ public class Client {
 	public static void usage() {
 		System.out.println("Usage : Client serverAddress port clientID");
 	}
-	
+
 	public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException,
-			IllegalAccessException, InstantiationException {
+	IllegalAccessException, InstantiationException {
 		if (args.length != 3) {
 			usage();
 			return;
@@ -285,6 +315,10 @@ public class Client {
 					} else {
 						ObjectNode response = client.createGoodResponse(computation);
 						client.sendPostResponse(computation.toString().getBytes().length, response);
+						System.out.println("\n***************************************\n");
+						System.out.println(client.getResponseCodeServer());
+						System.out.println("\n***************************************\n");
+
 					}
 
 				}
