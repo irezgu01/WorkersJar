@@ -97,7 +97,6 @@ public class JsonManipulation {
 				e.printStackTrace();
 			}
 		});
-
 	}
 
 }

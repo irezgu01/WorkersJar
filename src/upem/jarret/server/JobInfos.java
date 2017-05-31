@@ -16,7 +16,6 @@ public class JobInfos {
 		tasks = new TaskManager(job.getJobId(), job.getJobTaskNumber(), job.getWorkerVersionNumber(), job.getWorkerURL(), job.getWorkerClassName());
 		this.fileContainsResponses = new File("./src/"+answerDirectoryName+""+job.getJobId());
 		this.fileContainsLogs = new File("./src/"+logDirectoryName+""+job.getJobId());
-
 	}
 	
 	public boolean verifyDoneAllTasks() {

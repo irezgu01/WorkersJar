@@ -42,7 +42,6 @@ public class Server {
 			process();
 			updateInterestOps();
 		}
-
 		public void doWrite() throws IOException {
 			out.flip();
 			sc.write(out);

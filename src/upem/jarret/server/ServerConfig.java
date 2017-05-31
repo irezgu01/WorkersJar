@@ -10,6 +10,7 @@ public class ServerConfig {
 	private  int comeBackInSeconds;
 
 	public ServerConfig(){};
+	
 	public ServerConfig(int port, String logDirectory, String answersDirectory, int maxFileSize,
 			int comeBackInSeconds) {
 		super();

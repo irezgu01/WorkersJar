@@ -29,8 +29,6 @@ public class JobManager {
 		System.out.println(jobs);
 	}
 	*/
-	
-
 
 
 }
