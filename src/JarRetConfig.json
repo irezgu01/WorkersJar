@@ -1,0 +1,8 @@
+{
+ "Port" :  8080  ,
+ "LogDirectory" : "log/",
+ "AnswersDirectory" : "answers/",
+ "MaxFileSize" : 1024,
+ "ComeBackInSeconds" : 300
+}
+

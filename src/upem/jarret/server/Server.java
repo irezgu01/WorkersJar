@@ -20,6 +20,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import upem.jarret.json.Job;
+import upem.jarret.json.JsonManipulation;
 
 public class Server {
 	private static class Context {
@@ -82,6 +83,7 @@ public class Server {
 
 	private static final int BUF_SIZE = 4096;
 	private static final long TIMEOUT = 5_000;
+	private final ServerConfig serverConfig;
 	private final ServerSocketChannel serverSocketChannel;
 	private final Selector selector;
 	private final Set<SelectionKey> selectedKeys;
@@ -99,14 +101,20 @@ public class Server {
 	private int currentIndexArrayJobsTasks  = 0;
 	private boolean noTaskNow = false;
 
-	public Server(int port) throws Exception {
+	public Server(int port,String file) throws Exception {
 		serverSocketChannel = ServerSocketChannel.open();
 		serverSocketChannel.bind(new InetSocketAddress(port));
 		selector = Selector.open();
 		selectedKeys = selector.selectedKeys();
-		jobs = JobManager.init();
+		serverConfig = JsonManipulation.parseServerConfig(file);
+		jobs = JobManager.init(serverConfig.getAnswersDirectory(),serverConfig.getLogDirectory());
+		System.out.println(serverConfig);
 		initJobsTasks();
 		arraySize = jobs.keySet().size();
+		
+		jobs.values().forEach(jobInfo -> System.out.println("AnswersDirectory : "+jobInfo.getFileContainsResponses()+"\n"
+				+ "LogsDirectory : "+jobInfo.getFileContainsLog()));
+		
 	}
 
 	private void initJobsTasks(){
@@ -122,6 +130,25 @@ public class Server {
 		return false;
 	}
 
+	public void launch() throws IOException {
+		serverSocketChannel.configureBlocking(false);
+		serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
+		Set<SelectionKey> selectedKeys = selector.selectedKeys();
+		while (!Thread.interrupted()) {
+		    if(verifyAvailableTask()){
+		    	System.out.println(getTask().toString());
+		    }
+		    try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//selector.select();          
+            //processSelectedKeys();
+			//selectedKeys.clear();
+		}
+	}
 	public Optional<String> getTask(){
 
 		Optional<String> result = Optional.empty();
@@ -184,26 +211,6 @@ public class Server {
 		httpError.append("HTTP/1.1 400").append("\r\n\r\n");
 
 		return httpError.toString();
-	}
-
-	public void launch() throws IOException {
-		serverSocketChannel.configureBlocking(false);
-		serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-		Set<SelectionKey> selectedKeys = selector.selectedKeys();
-		while (!Thread.interrupted()) {
-		    if(verifyAvailableTask()){
-		    	System.out.println(getTask().toString());
-		    }
-		    try {
-				Thread.sleep(10);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			//selector.select();          
-            //processSelectedKeys();
-			//selectedKeys.clear();
-		}
 	}
 
 	private void processSelectedKeys() throws IOException {
@@ -290,7 +297,7 @@ public class Server {
 			usage();
 			return;
 		}
-		Server server = new Server(7777);
+		Server server = new Server(7777,"./src/JarRetConfig.json");
 		server.launch();
 
 	}

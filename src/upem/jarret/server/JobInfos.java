@@ -8,7 +8,16 @@ public class JobInfos {
 	private final int nbTaskAssigned;
 	private final TaskManager tasks;
 	private final File fileContainsResponses;
+	private final File fileContainsLogs;
 	private boolean doneAllTasks = false;
+	
+	public JobInfos(int nbTaskAssigned,Job job,String answerDirectoryName,String logDirectoryName) {
+		this.nbTaskAssigned = nbTaskAssigned;
+		tasks = new TaskManager(job.getJobId(), job.getJobTaskNumber(), job.getWorkerVersionNumber(), job.getWorkerURL(), job.getWorkerClassName());
+		this.fileContainsResponses = new File("./src/"+answerDirectoryName+""+job.getJobId());
+		this.fileContainsLogs = new File("./src/"+logDirectoryName+""+job.getJobId());
+
+	}
 	
 	public boolean verifyDoneAllTasks() {
 		return doneAllTasks;
@@ -21,11 +30,9 @@ public class JobInfos {
 	public File getFileContainsResponses() {
 		return fileContainsResponses;
 	}
-
-	public JobInfos(int nbTaskAssigned,Job job) {
-		this.nbTaskAssigned = nbTaskAssigned;
-		tasks = new TaskManager(job.getJobId(), job.getJobTaskNumber(), job.getWorkerVersionNumber(), job.getWorkerURL(), job.getWorkerClassName());
-		this.fileContainsResponses = new File("./Tasks_Responses/"+job.getJobId());
+	
+	public File getFileContainsLog() {
+		return fileContainsLogs;
 	}
 
 	public int getNbTaskAssigned() {

@@ -11,7 +11,7 @@ import upem.jarret.json.JsonManipulation;
 public class JobManager {
 
 
-	public static Map<Job, JobInfos> init() throws Exception{
+	public static Map<Job, JobInfos> init(String answerDirectoryName,String logDirectoryName) throws Exception{
 		HashMap<Job, JobInfos> map = new HashMap<>();
 		List<Job> jobs = JsonManipulation.parseFile("./src/tasks.json").
 				stream().
@@ -19,7 +19,7 @@ public class JobManager {
 				.collect(Collectors.toList());
 
 		jobs.forEach(job->{
-			map.put(job, new JobInfos(job.getJobPriority(), job));
+			map.put(job, new JobInfos(job.getJobPriority(), job,answerDirectoryName,logDirectoryName));
 		});
 		return map;
 	}

@@ -15,8 +15,10 @@ import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import upem.jarret.server.ServerConfig;
+
 public class JsonManipulation {
-	
+
 	/**
 	 * retourne une chaine au format json
 	 * @param string
@@ -27,7 +29,7 @@ public class JsonManipulation {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(string);
 	}
-	
+
 	/**
 	 * convert the string received from the server to an ObjectNode
 	 * @param string
@@ -42,7 +44,7 @@ public class JsonManipulation {
 		ObjectNode objectNode = (ObjectNode) node;
 		return objectNode;
 	}
-	
+
 	/**
 	 * parse a  file and return a List of ObjectNode from the file 
 	 * @param file
@@ -62,7 +64,7 @@ public class JsonManipulation {
 			}
 		} catch (
 
-		JsonGenerationException e) {
+				JsonGenerationException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
@@ -71,6 +73,16 @@ public class JsonManipulation {
 		}
 		return tasks;
 	}
+
+	public static ServerConfig parseServerConfig(String file) throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
+		ServerConfig serverConfig;
+
+		serverConfig =  mapper.readValue(new File(file), ServerConfig.class);
+		return serverConfig;
+	}
+
+
 	public static String taskToJson(Job job) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(job);
@@ -85,7 +97,7 @@ public class JsonManipulation {
 				e.printStackTrace();
 			}
 		});
-			
+
 	}
 
 }
