@@ -21,6 +21,7 @@ public class JsonManipulation {
 
 	/**
 	 * retourne une chaine au format json
+	 * 
 	 * @param string
 	 * @return
 	 * @throws JsonProcessingException
@@ -32,6 +33,7 @@ public class JsonManipulation {
 
 	/**
 	 * convert the string received from the server to an ObjectNode
+	 * 
 	 * @param string
 	 *            the body of the task received from the server
 	 * @return ObjectNode the response of the server
@@ -46,7 +48,8 @@ public class JsonManipulation {
 	}
 
 	/**
-	 * parse a  file and return a List of ObjectNode from the file 
+	 * parse a file and return a List of ObjectNode from the file
+	 * 
 	 * @param file
 	 * @return
 	 * @throws Exception
@@ -64,7 +67,7 @@ public class JsonManipulation {
 			}
 		} catch (
 
-				JsonGenerationException e) {
+		JsonGenerationException e) {
 			e.printStackTrace();
 		} catch (JsonMappingException e) {
 			e.printStackTrace();
@@ -78,15 +81,24 @@ public class JsonManipulation {
 		ObjectMapper mapper = new ObjectMapper();
 		ServerConfig serverConfig;
 
-		serverConfig =  mapper.readValue(new File(file), ServerConfig.class);
+		serverConfig = mapper.readValue(new File(file), ServerConfig.class);
 		return serverConfig;
 	}
-
 
 	public static String taskToJson(Job job) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(job);
 	}
+	
+	public static boolean isJson(String jsonInString ) {
+	    try {
+	       final ObjectMapper mapper = new ObjectMapper();
+	       mapper.readTree(jsonInString);
+	       return true;
+	    } catch (IOException e) {
+	       return false;
+	    }
+	  }
 	public static void main(String[] args) throws Exception {
 		List<Job> tasks = JsonManipulation.parseFile("./src/tasks.json");
 		tasks.stream().forEach(s -> {
@@ -97,6 +109,7 @@ public class JsonManipulation {
 				e.printStackTrace();
 			}
 		});
+
 	}
 
 }
