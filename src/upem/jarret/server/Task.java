@@ -3,28 +3,28 @@ package upem.jarret.server;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Task {
-	private final int jobId;
+	private final String jobId;
 	private String workerVersion;
 	private String workerURL;
 	private String workerClassName;
-	private int task ;
+	private String task ;
 	
 	
 	public void setTask(int task) {
-		this.task = task;
+		this.task = ""+task;
 	}
 	public Task(int jobId, String workerVersionNumber, String workerURL, String workerClassName,int task) {
-		this.jobId = jobId;
+		this.jobId = ""+task;
 		this.workerVersion = workerVersionNumber;
 		this.workerURL = workerURL;
 		this.workerClassName = workerClassName;
-		this.task = task;
+		this.task = ""+task;
 	}
 	@JsonProperty("JobId")
-	public int getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
-	@JsonProperty("WorkerVersionNumber")
+	@JsonProperty("WorkerVersion")
 	public String getWorkerVersionNumber() {
 		return workerVersion;
 	}
@@ -38,7 +38,7 @@ public class Task {
 	}
 	
 	@JsonProperty("Task")
-	public int getJobTaskNumber() {
+	public String getJobTaskNumber() {
 		return task;
 	}
 
