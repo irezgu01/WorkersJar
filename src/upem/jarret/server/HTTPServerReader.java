@@ -14,11 +14,9 @@ import upem.jarret.client.HTTPHeader;
 
 public class HTTPServerReader {
 	private final Charset UTF8_CHARSET = Server.UTF8_CHARSET;
-	private final long TIME_OUT = Server.TIMEOUT;
 	public static final String INCOMPLETE_LINE = "incomplete";
 	private final SocketChannel sc;
 	private final ByteBuffer buff;
-	private ByteBuffer currentAnswer;
 
 	public HTTPServerReader(SocketChannel sc, ByteBuffer buff) {
 		this.sc = sc;

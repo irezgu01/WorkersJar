@@ -2,6 +2,7 @@ package upem.jarret.server;
 
 import java.io.IOException;
 
+
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
@@ -21,7 +22,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import upem.jarret.client.HTTPHeader;
 import upem.jarret.json.Job;
 import upem.jarret.json.JsonManipulation;
@@ -187,13 +187,13 @@ public class Server {
 			if (key.isValid() && key.isAcceptable()) {
 				doAccept(key);
 			}
-
+            Context cntxt= (Context) key.attachment();
 			if (key.isValid() && key.isWritable()) {
 				System.out.println("Do write process ...");
 				try {
 					doWrite(key);
 				} catch (IOException e) {
-					//Nothing
+					silentlyClose(cntxt.getSc());
 				}
 			}
 			if (key.isValid() && key.isReadable()) {
@@ -201,7 +201,7 @@ public class Server {
 				try {
 					doRead(key);
 				} catch (IOException e) {
-					//Nothing
+					silentlyClose(cntxt.getSc());
 				}
 			}
 		}

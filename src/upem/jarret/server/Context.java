@@ -61,7 +61,7 @@ public class Context {
 		return sc.read(in);
 	}
 	public void write() throws IOException{
-		out.flip();
+	//	out.flip();
 	//	System.out.println("Bytes à ecrire "+Charset.forName("UTF-8").decode(out));
 		out.flip();
 		int r = sc.write(out);
