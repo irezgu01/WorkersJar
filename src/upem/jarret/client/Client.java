@@ -66,9 +66,11 @@ public class Client {
 	 *            the answer of the client (jsonNode)
 	 * @throws IOException
 	 */
-	public void sendPostResponse(int length, ObjectNode response) throws IOException  {
+	public void sendPostResponse(ObjectNode response) throws IOException  {
 		long jobId = response.get("JobId").asLong();
 		int task = response.get("Task").asInt();
+		ByteBuffer responsebb = UTF8_CHARSET.encode(response.toString());
+		int length = responsebb.remaining()+ Long.BYTES + Integer.BYTES;
 		StringBuilder httpPostHeader = new StringBuilder();
 		httpPostHeader.append("POST Answer HTTP/1.1\r\nHost: ").append(server.getHostName())
 		.append(" Content-Type: application/json\r\nContent-Length: ").append(length).append("\r\n\r\n");
@@ -77,7 +79,7 @@ public class Client {
 		buffer.put(UTF8_CHARSET.encode(httpPostHeader.toString()));
 		buffer.putLong(jobId);
 		buffer.putInt(task);
-		buffer.put(UTF8_CHARSET.encode(response.toString()));
+		buffer.put(responsebb);
 		buffer.flip();
 		try {
 			sc.write(buffer);
@@ -308,13 +310,13 @@ public class Client {
 					ObjectNode computation = client.compute(serverTask);
 					if (client.isTooLong(computation)) {
 						ObjectNode response = client.createErrorResponse("Too Long");
-						client.sendPostResponse(response.toString().getBytes().length, response);
+						client.sendPostResponse(response);
 					} else if (client.isNested(computation)) {
 						ObjectNode response = client.createErrorResponse("Answer is nested");
-						client.sendPostResponse(response.toString().getBytes().length, response);
+						client.sendPostResponse(response);
 					} else {
 						ObjectNode response = client.createGoodResponse(computation);
-						client.sendPostResponse(computation.toString().getBytes().length, response);
+						client.sendPostResponse(response);
 						System.out.println("\n***************************************\n");
 						System.out.println(client.getResponseCodeServer());
 						System.out.println("\n***************************************\n");
